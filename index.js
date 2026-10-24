@@ -49,6 +49,28 @@ app.post("/add-destination", async (req, res) => {
   res.send(result);
 });
 
+// Edit a destination
+app.put('/destinations/:id', async (req, res) => {
+  const {id} = req.params;
+  const data = req.body;
+  const result = await destinationCollection.updateOne(
+    {_id: new ObjectId(id)},
+    {$set: data}
+  )
+  res.json(result);
+})
+
+// Delete
+app.delete('/destinations/:id', async (req, res) => {
+  const {id} = req.params;
+  const data = req.body;
+  const result = await destinationCollection.deleteOne(
+    {_id: new ObjectId(id)},
+  
+  )
+  res.json(result);
+})
+
 app.listen(5000, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
