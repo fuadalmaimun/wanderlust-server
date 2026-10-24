@@ -9,6 +9,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Connect to MongoDB
 const client = new MongoClient(process.env.MONGODB_URI);
 
 export async function connectToMongoDB() {
@@ -26,15 +27,22 @@ const mongoClient = await connectToMongoDB();
 const db = mongoClient.db("wanderlust");
 const destinationCollection = db.collection("destinations");
 
+
 app.get("/", (req, res) => {
   res.send({ message: "Hello World!" });
 });
 
-// Send all destinations
+
+// এই code-এর কাজ হলো MongoDB থেকে সব destination-এর data নিয়ে frontend-এ পাঠানো।
+
 app.get("/destinations", async (req, res) => {
   const data = await destinationCollection.find().toArray();
   res.send(data);
 });
+
+
+
+//এই API-এর কাজ হলো MongoDB থেকে একটি নির্দিষ্ট destination খুঁজে বের করে frontend-এ পাঠানো। 
 
 app.get("/destinations/:id", async (req, res) => {
   const {id} = req.params;
