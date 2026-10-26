@@ -26,12 +26,11 @@ export async function connectToMongoDB() {
 const mongoClient = await connectToMongoDB();
 const db = mongoClient.db("wanderlust");
 const destinationCollection = db.collection("destinations");
-
+const userCollection = db.collection("bookings");
 
 app.get("/", (req, res) => {
   res.send({ message: "Hello World!" });
 });
-
 
 // এই code-এর কাজ হলো MongoDB থেকে সব destination-এর data নিয়ে frontend-এ পাঠানো।
 
@@ -40,12 +39,10 @@ app.get("/destinations", async (req, res) => {
   res.send(data);
 });
 
-
-
-//এই API-এর কাজ হলো MongoDB থেকে একটি নির্দিষ্ট destination খুঁজে বের করে frontend-এ পাঠানো। 
+//এই API-এর কাজ হলো MongoDB থেকে একটি নির্দিষ্ট destination খুঁজে বের করে frontend-এ পাঠানো।
 
 app.get("/destinations/:id", async (req, res) => {
-  const {id} = req.params;
+  const { id } = req.params;
   const data = await destinationCollection.findOne({ _id: new ObjectId(id) });
   res.send(data);
 });
@@ -58,26 +55,45 @@ app.post("/add-destination", async (req, res) => {
 });
 
 // Edit a destination
-app.put('/destinations/:id', async (req, res) => {
-  const {id} = req.params;
+app.put("/destinations/:id", async (req, res) => {
+  const { id } = req.params;
   const data = req.body;
   const result = await destinationCollection.updateOne(
-    {_id: new ObjectId(id)},
-    {$set: data}
-  )
+    { _id: new ObjectId(id) },
+    { $set: data },
+  );
   res.json(result);
-})
+});
 
 // Delete
-app.delete('/destinations/:id', async (req, res) => {
-  const {id} = req.params;
+app.delete("/destinations/:id", async (req, res) => {
+  const { id } = req.params;
   const data = req.body;
-  const result = await destinationCollection.deleteOne(
-    {_id: new ObjectId(id)},
-  
-  )
+  const result = await destinationCollection.deleteOne({
+    _id: new ObjectId(id),
+  });
   res.json(result);
+});
+
+
+app.get('/my-bookings/:email', async (req, res) => {
+  const { email } = req.params;
+  const data = await userCollection.find({ email: email }).toArray();
+  res.send(data);
 })
+
+app.delete('/my-bookings/:id', async (req, res) => {
+  const { id } = req.params;
+  const data = await userCollection.deleteOne({_id: new ObjectId(id)});
+  res.send(data);
+})
+
+
+app.post("/bookings", async (req, res) => {
+  const { _id, ...data } = req.body;
+  const result = await userCollection.insertOne(data);
+  res.send(result);
+});
 
 app.listen(5000, () => {
   console.log(`Example app listening at http://localhost:${port}`);
