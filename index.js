@@ -40,7 +40,7 @@ const verifyToken = async (req, res, next) => {
   console.log(token);
 
   const JWKS = createRemoteJWKSet(
-    new URL("http://localhost:3000/api/auth/jwks"),
+    new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
   );
 
   try {
@@ -114,6 +114,12 @@ app.get("/destinations", async (req, res) => {
   res.send(data);
 });
 
+// Featured API
+app.get("/featured-destinations", async (req, res) => {
+  const result = await destinationCollection.find().limit(5).toArray();
+  res.send(result);
+});
+
 // ========================================
 // 7. GET API: একটি নির্দিষ্ট destination পাওয়া
 // ========================================
@@ -166,7 +172,7 @@ app.post("/add-destination", verifyToken, async (req, res) => {
 //
 // কাজ:
 // নির্দিষ্ট destination-এর data update করা।
-app.put("/destinations/:id", async (req, res) => {
+app.put("/destinations/:id", verifyToken, async (req, res) => {
   // URL থেকে destination-এর id নেওয়া।
   const { id } = req.params;
 
@@ -192,7 +198,7 @@ app.put("/destinations/:id", async (req, res) => {
 //
 // কাজ:
 // নির্দিষ্ট destination MongoDB থেকে delete করা।
-app.delete("/destinations/:id", async (req, res) => {
+app.delete("/destinations/:id", verifyToken, async (req, res) => {
   // URL থেকে destination-এর id নেওয়া।
   const { id } = req.params;
 
@@ -202,7 +208,7 @@ app.delete("/destinations/:id", async (req, res) => {
   });
 
   // Delete operation-এর result frontend-এ পাঠানো।
-  res.json(result);
+  res.send(result);
 });
 
 // ========================================
@@ -282,3 +288,5 @@ app.post("/bookings", async (req, res) => {
 app.listen(5000, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
+
+export default app;
