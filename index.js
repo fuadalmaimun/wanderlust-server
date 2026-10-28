@@ -2,6 +2,7 @@ import express from "express";
 import { MongoClient, ObjectId } from "mongodb";
 import cors from "cors";
 import "dotenv/config";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 
 // 1. Express server তৈরি করা
 
@@ -22,6 +23,34 @@ app.use(cors());
 // express.json() JSON request body-কে JavaScript object-এ
 // convert করে, যাতে আমরা req.body দিয়ে data পেতে পারি।
 app.use(express.json());
+
+// Backend Secure MiddleWare
+const verifyToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).send({ msg: "Unauthorized!" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).send({ msg: "Unauthorized!" });
+  }
+  console.log(token);
+
+  const JWKS = createRemoteJWKSet(
+    new URL("http://localhost:3000/api/auth/jwks"),
+  );
+
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+    next();
+  } catch (error) {
+    console.error("JWT verification error:", error);
+    return res.status(401).json({ msg: "Token verification failed" });
+  }
+};
 
 // 3. MongoDB connection
 
@@ -96,7 +125,7 @@ app.get("/destinations", async (req, res) => {
 //
 // এখানে :id হলো URL parameter।
 // এই API একটি নির্দিষ্ট destination খুঁজে বের করে।
-app.get("/destinations/:id", async (req, res) => {
+app.get("/destinations/:id", verifyToken, async (req, res) => {
   // URL থেকে destination-এর id নেওয়া হচ্ছে।
   const { id } = req.params;
 
@@ -106,7 +135,7 @@ app.get("/destinations/:id", async (req, res) => {
   const data = await destinationCollection.findOne({ _id: new ObjectId(id) });
 
   // পাওয়া destination frontend-এ পাঠানো হচ্ছে।
-  res.send(data);
+  res.json(data);
 });
 
 // ========================================
@@ -118,7 +147,7 @@ app.get("/destinations/:id", async (req, res) => {
 // কাজ:
 // Frontend থেকে নতুন destination-এর data নিয়ে
 // MongoDB-তে save করা।
-app.post("/add-destination", async (req, res) => {
+app.post("/add-destination", verifyToken, async (req, res) => {
   // Frontend-এর পাঠানো request body থেকে data নেওয়া।
   const data = req.body;
 
